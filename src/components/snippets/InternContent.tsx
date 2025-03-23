@@ -26,7 +26,7 @@ export async function InternContent({ experenceParams, searchParams }: { experen
     <div className="w-full h-full p-2 sm:p-4 space-y-4">
       <Separator />
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-        <div className="w-full lg:w-[300px] h-fit flex-shrink-0 space-y-4 sm:space-y-6 bg-background/50 p-3 sm:p-4 rounded-lg border sticky top-20">
+        <div className="w-full lg:w-[300px] h-full flex-shrink-0 space-y-4 sm:space-y-6 bg-background/50 p-3 sm:p-4 rounded-lg border sticky top-20">
           <form className="relative w-full" action={async (formData: FormData) => {
             'use server'
             const getCookies = await cookies();
@@ -39,15 +39,13 @@ export async function InternContent({ experenceParams, searchParams }: { experen
               className="pr-10 bg-background"
               placeholder="Search internships..."
             />
-            <button type="submit">
               <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </button>
           </form>
 
           <ScrollArea className="h-fit pb-4">
-            <div className="space-y-6">
+            <div className="space-y-6 pr-4">
               <Duration />
 
               <Separator />
@@ -106,7 +104,7 @@ export async function InternContent({ experenceParams, searchParams }: { experen
                         })}
                       </span>
                       <Button size="sm" variant="default" asChild>
-                        <Link href={`/jobs/internships/${internship.id}`}>View Details</Link>
+                        <Link href={`/jobs/internships/${internship.slugUrl}`}>View Details</Link>
                       </Button>
                     </div>
                   </div>

@@ -131,7 +131,7 @@ const parseSalary = (salaryString: string) => {
 export const getSingleJob = cache(async (id: string) => {
     const result = await prisma.jobs.findFirst({
         where: {
-            id: id,
+            slugUrl: id,
         },
     });
     return result;
@@ -140,7 +140,7 @@ export const getSingleJob = cache(async (id: string) => {
 export const getSingleIntern = cache(async (id: string) => {
     const results = await prisma.internships.findFirst({
         where: {
-            id: id,
+            slugUrl: id,
         },
     });
     return results;

@@ -23,7 +23,6 @@ export async function JobContent({ experenceParams, searchParams }: { experenceP
     const totalItems = await getJobsCount();
     const totalPages = Math.ceil(totalItems / 10);
     const jobsData = await getJobs(experenceParams, currentPage, searchValue);
-
     return (
         <div className="w-full h-full p-2 sm:p-4 space-y-4">
             <Separator />
@@ -112,7 +111,7 @@ export async function JobContent({ experenceParams, searchParams }: { experenceP
                                                 })}
                                             </span>
                                             <Button size="sm" variant="default" asChild>
-                                                <Link href={`/jobs/${job.id}`}>View Details</Link>
+                                                <Link href={`/jobs/${job.slugUrl}`}>View Details</Link>
                                             </Button>
                                         </div>
                                     </div>

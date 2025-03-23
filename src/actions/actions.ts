@@ -69,6 +69,7 @@ export const jobPosting = cache(async (formData: FormData) => {
   const responsibilities = (formData.get("responsibilities") as string).split(
     "\n"
   );
+  const randomUrl = `${company}-${title}-${Math.random().toString(36).substring(7)}`.replaceAll(' ', '-');
   const requirements = (formData.get("requirements") as string).split("\n");
   const skills = (formData.get("skills") as string)
     .split(",")
@@ -89,6 +90,7 @@ export const jobPosting = cache(async (formData: FormData) => {
       benefits,
       jobtype,
       experience,
+      slugUrl : randomUrl
     },
   });
   revalidatePath("dashboard/post-job");
@@ -109,6 +111,7 @@ export const internshipPosting = cache(async (formData: FormData) => {
     .map((skill) => skill.trim());
   const benefits = (formData.get("benefits") as string).split("\n");
   const duration = formData.get("duration") as string;
+  const randomUrl = `${company}-${title}-${Math.random().toString(36).substring(7)}`.replaceAll(' ', '-');
 
   await prisma.internships.create({
     data: {
@@ -124,6 +127,7 @@ export const internshipPosting = cache(async (formData: FormData) => {
       skills,
       benefits,
       duration,
+      slugUrl : randomUrl
     },
   });
 

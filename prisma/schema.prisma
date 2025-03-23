@@ -231,6 +231,7 @@ model Jobs {
   url              String
   createdAt        DateTime @default(now())
   experience       String
+  slugUrl          String
 }
 
 enum InternType {
@@ -255,6 +256,7 @@ model internships {
   url          String
   internType   InternType
   createdAt    DateTime   @default(now())
+  slugUrl      String
 }
 
 
