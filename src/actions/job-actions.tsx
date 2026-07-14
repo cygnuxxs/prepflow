@@ -3,14 +3,31 @@
 import prisma from "@/prisma";
 import { JobType } from "../../generated/prisma/client";
 import { cache } from "react";
+import redis from "@/lib/redis";
 
 export const getJobsCount = cache(async () => {
+    const key = `jobs:count`;
+    const cachedCount = await redis.get(key);
+    if (cachedCount) {
+        return cachedCount
+    }
     const count = await prisma.jobs.count();
+    await redis.set(key, count, {
+        ex: 60 * 60, // Cache for 1 hour
+    });
     return count;
 });
 
 export const getInternshipsCount = cache(async () => {
+    const key = `internships:count`;
+    const cachedCount = await redis.get(key);
+    if (cachedCount) {
+        return cachedCount
+    }
     const count = await prisma.internships.count();
+    await redis.set(key, count, {
+        ex: 60 * 60, // Cache for 1 hour
+    });
     return count;
 })
 
@@ -21,6 +38,11 @@ export const getJobs = cache(async (searchParams: IsearchParams, currentPage: nu
     const experienceArray = params.experience ? (Array.isArray(params.experience) ? params.experience : [params.experience]) : [];
     const jobTypeArray = params.jobType ? (Array.isArray(params.jobType) ? params.jobType : [params.jobType]) : [];
     const salaryRangeArray = params.salaryRange ? (Array.isArray(params.salaryRange) ? params.salaryRange : [params.salaryRange]) : [];
+    const key = `jobs:${currentPage}:${searchValue || ""}:${experienceArray.join(",")}:${jobTypeArray.join(",")}:${salaryRangeArray.join(",")}`;
+    const cachedData = await redis.get(key);
+    if (cachedData) {
+        return cachedData
+    }
      
     const where: any = {};
     if (searchValue) {
@@ -87,7 +109,9 @@ export const getJobs = cache(async (searchParams: IsearchParams, currentPage: nu
             });
         });
     }
-
+    await redis.set(key, filteredJobs, {
+        ex: 60 * 60, // Cache for 1 hour
+    });
     return filteredJobs;
 });
 
@@ -147,6 +171,11 @@ export const getSingleIntern = cache(async (id: string) => {
 });
 
 export const getInternships = cache(async (searchParams: IsearchParams, searchValue?: string) => {
+    const key = `internships:${searchValue || ""}:${JSON.stringify(searchParams)}`;
+    const cachedData = await redis.get(key);
+    if (cachedData) {
+        return cachedData
+    }
     if (!searchParams) {
         return [];
     }
@@ -212,5 +241,8 @@ export const getInternships = cache(async (searchParams: IsearchParams, searchVa
         });
     }
 
+    await redis.set(key, filteredInternships, {
+        ex: 60 * 60, // Cache for 1 hour
+    });
     return filteredInternships;
 });

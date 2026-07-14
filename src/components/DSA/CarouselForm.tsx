@@ -47,6 +47,7 @@ const CarouselForm: React.FC = () => {
       const savedDraft = localStorage.getItem(DRAFT_KEY);
       if (savedDraft) {
         const draft: DraftData = JSON.parse(savedDraft);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCarouselName(draft.carouselName);
         setEntries(draft.entries.length > 0 ? draft.entries : [EMPTY_ENTRY()]);
         setLastSaved(draft.lastSaved);

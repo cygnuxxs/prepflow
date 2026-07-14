@@ -40,6 +40,7 @@ export function DataTable<TData, TValue>({
     ? [...columnFilters, { id: 'image', value: true }]
     : columnFilters
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

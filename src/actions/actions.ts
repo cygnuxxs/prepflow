@@ -5,6 +5,7 @@ import prisma from "@/prisma";
 import { cache } from "react";
 import { InternType, JobType, UserRole } from "../../generated/prisma/client";
 import { z } from "zod";
+import redis from "@/lib/redis";
 
 // --- Schemas for Validation ---
 
@@ -146,6 +147,13 @@ export const internshipPosting = async (prevState: unknown, formData: FormData) 
 
 export const getCarouselCategoryData = cache(
   async (carouselSlug: string, categorySlug: string, userId?: string) => {
+    const key = `carousel:${carouselSlug}:category:${categorySlug}:user:${userId ?? "guest"}`;
+    if (await redis.exists(key)) {
+      const cachedData = await redis.get(key);
+      if (cachedData) {
+        return cachedData;
+      }
+    }
     const results = await prisma.sheetCategory.findFirst({
       where: {
         slug: categorySlug,
@@ -192,6 +200,15 @@ export const getCarouselCategoryData = cache(
         ...problem,
         UserProgress: isCompleted ? { isCompleted: true } : null,
       };
+    });
+
+    await redis.set(key, {
+      sheetName: results.sheet.name,
+      problems: formattedProblems,
+      totalProblemsCount: formattedProblems.length,
+      solvedProblemsCount,
+    }, {
+      ex: 60 * 60, // Cache for 1 hour
     });
 
     return {

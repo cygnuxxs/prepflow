@@ -16,6 +16,12 @@ declare module "*.scss" {
   export default classes;
 }
 
+interface ProblemTopicResult {
+  name: string;
+  count: number;
+  solvedCount?: number;
+}
+
 interface CompilerState {
   language: string;
   code: string;
@@ -257,3 +263,94 @@ interface GfgApiResponse {
   unsolved: number;
   results: GfgProblemResult[];
 }
+
+
+
+// cache file 
+
+const isCacheHit = <T,>(value: T | null | undefined): value is T => {
+  return value !== null && value !== undefined;
+};
+
+const readCachedJson = async <T,>(key: string): Promise<T | null> => {
+  const cachedData = await redis.get<T | string>(key);
+
+  if (!isCacheHit(cachedData)) {
+    return null;
+  }
+
+  if (typeof cachedData === "string") {
+    try {
+      return JSON.parse(cachedData) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  return cachedData;
+};
+
+type CarouselCategoryProblem = {
+  title: string;
+  url: string;
+  topicTags: { name: string | null }[];
+  slug: string;
+  difficulty: string;
+  platform: string;
+  companyTags: { name: string; _count: unknown }[];
+  UserProgress: { isCompleted: boolean } | null;
+};
+
+type CarouselCategoryData = {
+  sheet: { name: string };
+  problems: CarouselCategoryProblem[];
+  totalProblemsCount: number;
+  solvedProblemsCount: number;
+};
+
+
+const isCacheHit = <T,>(value: T | null | undefined): value is T => {
+  return value !== null && value !== undefined;
+};
+
+const readCachedJson = async <T,>(key: string): Promise<T | null> => {
+  const cachedData = await redis.get<T | string>(key);
+
+  if (!isCacheHit(cachedData)) {
+    return null;
+  }
+
+  if (typeof cachedData === "string") {
+    try {
+      return JSON.parse(cachedData) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  return cachedData;
+};
+
+type CompaniesList = Awaited<ReturnType<typeof prisma.problemCompany.findMany>>;
+
+type DifficultyBreakdown = Record<
+  "SCHOOL" | "BASIC" | "EASY" | "MEDIUM" | "HARD",
+  { solved: number; unsolved: number }
+>;
+
+type CompanyTopicWiseProblemsResult = {
+  totalProblems: number;
+  solvedProblems: number;
+  problems: Array<{
+    title: string;
+    slug: string;
+    platform: Platform;
+    topicTags: { name: string }[];
+    companyTags: { name: string }[];
+    UserProgress: { isCompleted: boolean; userId: string } | null;
+    difficulty: keyof DifficultyBreakdown;
+    mainTopics: { name: string }[];
+    url: string;
+  }>;
+  difficultyCount: DifficultyBreakdown;
+};

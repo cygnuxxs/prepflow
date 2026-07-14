@@ -38,6 +38,7 @@ export function useTerminalIO({ terminal, getTerminal }: UseTerminalIOOptions) {
   useEffect(() => {
     const term = getCurrentTerminal();
     if (outputBuffer.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLastProcessedIndex(0);
       // Clear the terminal when buffer is cleared (handles hidden terminals)
       if (term) {
@@ -54,6 +55,7 @@ export function useTerminalIO({ terminal, getTerminal }: UseTerminalIOOptions) {
       for (let i = lastProcessedIndex; i < outputBuffer.length; i++) {
         term.write(outputBuffer[i].data);
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLastProcessedIndex(outputBuffer.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

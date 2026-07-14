@@ -102,6 +102,7 @@ export function QuickSearch() {
   React.useEffect(() => {
     const saved = localStorage.getItem("recent-searches");
     if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRecentSearches(JSON.parse(saved));
     }
   }, []);

@@ -95,7 +95,9 @@ const SVG = ({
   const pathDelays = useMemo(
     () =>
       paths.map(() => ({
+        // eslint-disable-next-line react-hooks/purity
         delay: Math.floor(Math.random() * 10),
+        // eslint-disable-next-line react-hooks/purity
         repeatDelay: Math.floor(Math.random() * 10 + 2),
       })),
     // paths is a static constant defined inside the component — safe to omit

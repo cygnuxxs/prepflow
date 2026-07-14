@@ -1,5 +1,6 @@
 "use server";
 
+import redis from "@/lib/redis";
 import { toSlug } from "@/lib/utils";
 import prisma from "@/prisma";
 import { cache } from "react";
@@ -21,7 +22,14 @@ export const getCompanyImg = cache(async (name: string) => {
 
 export const getCompanies = cache(
   async (currentPage: number, searchValue?: string) => {
-    return await prisma.problemCompany.findMany({
+
+    const key = `companies:${currentPage}:${searchValue || ""}`;
+    const cachedData = await redis.get(key);
+    if (cachedData) {
+      return cachedData
+    }
+
+    const companies = await prisma.problemCompany.findMany({
       where: searchValue
         ? {
             name: {
@@ -35,14 +43,13 @@ export const getCompanies = cache(
       take: 20,
       skip: (currentPage - 1) * 20,
     });
+    await redis.set(key, JSON.stringify(companies), {
+      ex: 60 * 60,
+    });
+    return companies;
   },
 );
 
-interface ProblemTopicResult {
-  name: string;
-  count: number;
-  solvedCount?: number;
-}
 
 export const getCompanyPlatformProblems = cache(
   async (
@@ -50,6 +57,14 @@ export const getCompanyPlatformProblems = cache(
     platform: Platform,
     userId?: string,
   ): Promise<ProblemTopicResult[]> => {
+    const key = `company:${slug}:${platform}:${userId ?? "guest"}`;
+
+    // Check cache
+    const cachedData = await redis.get<ProblemTopicResult[]>(key);
+    if (cachedData) {
+      return cachedData;
+    }
+
     const problemFilter = {
       companyTags: { some: { slug } },
       platform,
@@ -58,44 +73,82 @@ export const getCompanyPlatformProblems = cache(
     const solvedFilter = userId
       ? {
           ...problemFilter,
-          UserProgress: { some: { userId, isCompleted: true } },
+          UserProgress: {
+            some: {
+              userId,
+              isCompleted: true,
+            },
+          },
         }
       : null;
 
     const [totalResults, solvedResults] = await Promise.all([
       prisma.problemTopic.findMany({
-        where: { problems: { some: problemFilter } },
-        orderBy: { problems: { _count: "desc" } },
+        where: {
+          problems: {
+            some: problemFilter,
+          },
+        },
+        orderBy: {
+          problems: {
+            _count: "desc",
+          },
+        },
         select: {
           name: true,
-          _count: { select: { problems: { where: problemFilter } } },
+          _count: {
+            select: {
+              problems: {
+                where: problemFilter,
+              },
+            },
+          },
         },
       }),
+
       solvedFilter
         ? prisma.problemTopic.findMany({
-            where: { problems: { some: solvedFilter } },
+            where: {
+              problems: {
+                some: solvedFilter,
+              },
+            },
             select: {
               name: true,
-              _count: { select: { problems: { where: solvedFilter } } },
+              _count: {
+                select: {
+                  problems: {
+                    where: solvedFilter,
+                  },
+                },
+              },
             },
           })
-        : Promise.resolve(
-            [] as { name: string; _count: { problems: number } }[],
-          ),
+        : Promise.resolve([]),
     ]);
 
     const solvedMap = new Map(
-      solvedResults.map(({ name, _count }) => [name, _count.problems]),
+      solvedResults.map(({ name, _count }) => [name!, _count.problems]),
     );
 
-    return totalResults.map(({ name, _count }) => ({
-      name : name as string,
-      count: _count.problems,
-      ...(userId && { solvedCount: solvedMap.get(name) ?? 0 }),
-    })) as ProblemTopicResult[];
+    const result: ProblemTopicResult[] = totalResults.map(
+      ({ name, _count }) => ({
+        name: name!,
+        count: _count.problems,
+        ...(userId && {
+          solvedCount: solvedMap.get(name!) ?? 0,
+        }),
+      }),
+    );
+
+    // Store in Redis
+    await redis.set(key, result, {
+      ex: 60 * 60, // 1 hour
+    });
+
+    return result;
   },
 );
-
 export async function getCompanyTopicProgress(
   userId: string,
   companySlug: string,
@@ -121,6 +174,13 @@ export const getCompanyTopicWiseProblems = cache(
     platform: Platform,
     userId?: string,
   ) => {
+
+    const key = `company:${companySlug}:topic:${topicSlug}:platform:${platform}:user:${userId ?? "guest"}`;
+    const cachedResults = await redis.get(key);
+    if (cachedResults) {
+      return cachedResults
+    }
+
     const results = await prisma.problem.findMany({
       where: {
         companyTags: { some: { slug: companySlug } },
@@ -192,6 +252,16 @@ export const getCompanyTopicWiseProblems = cache(
         HARD: { solved: 0, unsolved: 0 },
       },
     );
+
+    await redis.set(key, {
+      totalProblems: total,
+      solvedProblems,
+      problems,
+      difficultyCount,
+    }, {
+      ex: 60 * 60, // Cache for 1 hour
+    });
+
     return {
       totalProblems: total,
       solvedProblems,
