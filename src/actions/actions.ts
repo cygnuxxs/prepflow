@@ -145,14 +145,29 @@ export const internshipPosting = async (prevState: unknown, formData: FormData) 
   }
 };
 
+type CarouselCategoryResult = {
+  name: string;
+  sheet: { name: string };
+  problems: Array<{
+    title: string;
+    url: string;
+    topicTags: { name: string | null }[];
+    slug: string;
+    difficulty: string;
+    platform: string;
+    companyTags: { name: string; _count: unknown }[];
+    UserProgress: { isCompleted: boolean } | null;
+  }>;
+  totalProblemsCount: number;
+  solvedProblemsCount: number;
+};
+
 export const getCarouselCategoryData = cache(
-  async (carouselSlug: string, categorySlug: string, userId?: string) => {
+  async (carouselSlug: string, categorySlug: string, userId?: string): Promise<CarouselCategoryResult | null> => {
     const key = `carousel:${carouselSlug}:category:${categorySlug}:user:${userId ?? "guest"}`;
-    if (await redis.exists(key)) {
-      const cachedData = await redis.get(key);
-      if (cachedData) {
-        return cachedData;
-      }
+    const cachedData = await redis.get<CarouselCategoryResult>(key);
+    if (cachedData) {
+      return cachedData;
     }
     const results = await prisma.sheetCategory.findFirst({
       where: {
@@ -202,21 +217,19 @@ export const getCarouselCategoryData = cache(
       };
     });
 
-    await redis.set(key, {
-      sheetName: results.sheet.name,
-      problems: formattedProblems,
-      totalProblemsCount: formattedProblems.length,
-      solvedProblemsCount,
-    }, {
-      ex: 60 * 60, // Cache for 1 hour
-    });
-
-    return {
-      ...results,
+    const result: CarouselCategoryResult = {
+      name: results.name,
+      sheet: results.sheet,
       problems: formattedProblems,
       totalProblemsCount: formattedProblems.length,
       solvedProblemsCount,
     };
+
+    await redis.set(key, result, {
+      ex: 60 * 60, // Cache for 1 hour
+    });
+
+    return result;
   }
 );
 

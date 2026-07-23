@@ -20,13 +20,21 @@ export const getCompanyImg = cache(async (name: string) => {
   });
 });
 
+type CompanyWithCount = {
+  id: number;
+  name: string;
+  slug: string;
+  image: string | null;
+  _count: { problems: number };
+};
+
 export const getCompanies = cache(
-  async (currentPage: number, searchValue?: string) => {
+  async (currentPage: number, searchValue?: string): Promise<CompanyWithCount[]> => {
 
     const key = `companies:${currentPage}:${searchValue || ""}`;
-    const cachedData = await redis.get(key);
+    const cachedData = await redis.get<CompanyWithCount[]>(key);
     if (cachedData) {
-      return cachedData
+      return cachedData;
     }
 
     const companies = await prisma.problemCompany.findMany({
@@ -166,7 +174,6 @@ export async function getCompanyTopicProgress(
 }
 
 // Cygnuxxs Area
-
 export const getCompanyTopicWiseProblems = cache(
   async (
     companySlug: string,
@@ -174,13 +181,18 @@ export const getCompanyTopicWiseProblems = cache(
     platform: Platform,
     userId?: string,
   ) => {
+    const key = `company:${companySlug}:${topicSlug}:${platform}:${userId ?? "guest"}`;
 
-    const key = `company:${companySlug}:topic:${topicSlug}:platform:${platform}:user:${userId ?? "guest"}`;
-    const cachedResults = await redis.get(key);
-    if (cachedResults) {
-      return cachedResults
+    // Check cache
+    const cachedData = await redis.get<{
+      totalProblems: number;
+      solvedProblems: number;
+      problems: Problem[];
+      difficultyCount: Record<string, { solved: number; unsolved: number }>;
+    }>(key);
+    if (cachedData) {
+      return cachedData;
     }
-
     const results = await prisma.problem.findMany({
       where: {
         companyTags: { some: { slug: companySlug } },
@@ -252,16 +264,15 @@ export const getCompanyTopicWiseProblems = cache(
         HARD: { solved: 0, unsolved: 0 },
       },
     );
-
+    // set key in Redis
     await redis.set(key, {
       totalProblems: total,
       solvedProblems,
       problems,
       difficultyCount,
     }, {
-      ex: 60 * 60, // Cache for 1 hour
+      ex: 60 * 60, // 1 hour
     });
-
     return {
       totalProblems: total,
       solvedProblems,
