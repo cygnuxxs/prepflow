@@ -18,11 +18,11 @@ export async function getVisitorsCount() {
 
     const data = await res.json();
     console.log(data)
-        if (typeof data?.activeCount !== 'number') {
+    if (typeof data?.activeCount !== 'number') {
       throw new Error('Invalid response format: count is not a number');
     }
 
-    const { activeCount }: { activeCount : number } = data;
+    const { activeCount }: { activeCount: number } = data;
 
     return activeCount;
   } catch (error) {

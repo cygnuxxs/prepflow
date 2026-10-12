@@ -9,7 +9,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "postinstall": "prisma generate",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:db": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
