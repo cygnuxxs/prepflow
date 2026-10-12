@@ -2,7 +2,7 @@
 
 export async function getVisitorsCount() {
   // Use server-side environment variable (no NEXT_PUBLIC_ prefix)
-  const baseUrl = "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const apiUrl = `${baseUrl}/api/visitors`;
 
   const res = await fetch(apiUrl);
@@ -19,7 +19,5 @@ export async function getVisitorsCount() {
   }
 
   const { activeCount }: { activeCount: number } = data;
-  console.log(activeCount)
-  console.log(typeof activeCount)
   return activeCount;
 }
