@@ -1,5 +1,5 @@
-import { Redis } from "@upstash/redis";
-import {headers} from 'next/headers'
+import redis from '@/lib/redis'
+import { headers } from 'next/headers'
 
 // Define response type for better type safety
 interface VisitorResponse {
@@ -7,12 +7,6 @@ interface VisitorResponse {
   success: boolean;
   error?: string;
 }
-
-// Initialize Redis with error handling
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
 
 export async function GET() {
   try {
