@@ -5,19 +5,23 @@ export async function getVisitorsCount() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const apiUrl = `${baseUrl}/api/visitors`;
 
-  const res = await fetch(apiUrl);
+  try {
+    const res = await fetch(apiUrl);
 
-  if (!res.ok) {
-    console.log(`Failed to fetch visitors count: ${res.status} ${res.statusText}`);
-    console.error(`Failed to fetch visitors count: ${res.status} ${res.statusText}`);
-    throw new Error(`HTTP ${res.status}: Failed to fetch visitors count`);
+    if (!res.ok) {
+      console.error(`Failed to fetch visitors count: ${res.status} ${res.statusText}`);
+      return null;
+    }
+
+    const data = await res.json();
+    if (typeof data?.activeCount !== 'number') {
+      console.error("Failed to fetch visitors count: invalid response format");
+      return null;
+    }
+
+    return data.activeCount;
+  } catch (error) {
+    console.error("Failed to fetch visitors count:", error);
+    return null;
   }
-
-  const data = await res.json();
-  if (typeof data?.activeCount !== 'number') {
-    throw new Error('Invalid response format: count is not a number');
-  }
-
-  const { activeCount }: { activeCount: number } = data;
-  return activeCount;
 }

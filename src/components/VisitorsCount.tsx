@@ -1,46 +1,10 @@
-"use client";
 
 import { formatIndianCount, getLabel } from "@/lib/utils";
-import React, { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { getVisitorsCount } from "@/actions/visitorsActions";
 
-const VisitorsCount = () => {
-  const [count, setCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchVisitorsCount = async () => {
-      try {
-        const response = await fetch("/api/visitors", { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: Failed to fetch visitors count`);
-        }
-
-        const data: unknown = await response.json();
-        if (
-          typeof data !== "object" ||
-          data === null ||
-          !("activeCount" in data) ||
-          typeof data.activeCount !== "number"
-        ) {
-          throw new Error("Invalid response format: count is not a number");
-        }
-
-        if (isMounted) {
-          setCount(data.activeCount);
-        }
-      } catch (error) {
-        console.error("Failed to fetch visitors count:", error);
-      }
-    };
-
-    void fetchVisitorsCount();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+const VisitorsCount = async () => {
+  const count = await getVisitorsCount()
 
   const displayCount = count === null ? "—" : formatIndianCount(count);
   const countLabel = count === null ? "Visitors count unavailable" : `${count} ${getLabel(count)}`;
